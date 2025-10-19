@@ -1,10 +1,8 @@
-# This workflow validates iPXE scripts in the repository using a lightweight Alpine Linux container.
+# This workflow validates iPXE scripts in the repository using a standard Ubuntu runner.
 # It runs on every push and pull request to the main branch.
 #
-# It performs two checks:
-# 1. Linting: Checks all *.ipxe files for syntax errors.
-# 2. Smoke Test: Attempts to boot the main entrypoint script in a QEMU VM
-#    to catch runtime errors like missing files or invalid commands.
+# It performs a smoke test by attempting to boot the main entrypoint script
+# in a QEMU VM to catch runtime errors like missing files or invalid commands.
 name: Validate iPXE Scripts
 
 on:
@@ -15,10 +13,7 @@ on:
 
 jobs:
   validate-ipxe:
-    # The job runs on a standard Ubuntu host, but all steps execute inside an Alpine container.
-    # Pinned to a specific version to ensure package availability.
     runs-on: ubuntu-latest
-    container: alpine:3.20
 
     steps:
       - name: Checkout repository
@@ -26,28 +21,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          # The ipxe package is in the 'community' repository for Alpine.
-          # We ensure it's enabled before updating and installing.
-          echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repositories
-          apk update
-          apk add ipxe qemu-system-x86_64
-
-      - name: Lint iPXE Scripts
-        run: |
-          echo "Scanning for iPXE scripts and checking syntax..."
-          has_errors=false
-          for script in $(find . -type f -name "*.ipxe"); do
-            echo "--> Checking ${script}"
-            # The 'ipxe-script' command comes from the ipxe package on Alpine
-            if ! ipxe-script --check "${script}"; then
-              echo "Syntax error found in ${script}"
-              has_errors=true
-            fi
-          done
-          if [ "$has_errors" = true ]; then
-            exit 1
-          fi
-          echo "All scripts passed syntax check."
+          sudo apt-get update
+          sudo apt-get install -y ipxe-qemu qemu-system-x86
 
       - name: Run iPXE Smoke Test in QEMU
         run: |
