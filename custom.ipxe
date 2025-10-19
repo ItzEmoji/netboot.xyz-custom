@@ -1,12 +1,66 @@
 #!ipxe
-###
-### netboot.xyz-custom menu
-###
 
-:start
-echo Hello world!
-sleep 10
-goto custom_exit
+# =================================================================
+# == iPXE Boot Script for NixOS from a GitHub Release            ==
+# =================================================================
+#
+# This script boots a NixOS installer by fetching the kernel and initrd
+# directly from the assets of a GitHub release.
 
-:custom_exit
-exit 0
+# --- SCRIPT CONFIGURATION ---
+# IMPORTANT: Replace these with your actual GitHub username and repository name.
+set github_user ItzEmoji
+set github_repo nixos-images
+set release_tag latest
+
+# --- DYNAMIC URLS ---
+set base-url https://github.com/${github_user}/${github_repo}/releases/download/${release_tag}
+set iso-url ${base-url}/nixos-installer.iso
+set kernel-url ${base-url}/nixos.vmlinuz
+set initrd-url ${base-url}/nixos.initrd
+
+echo "====================================================="
+echo "Booting NixOS Installer from GitHub"
+echo "Repository: https://github.com/${github_user}/${github_repo}"
+echo "Release:    ${release_tag}"
+echo "====================================================="
+echo
+
+# --- KERNEL AND INITRD LOADING ---
+echo Fetching NixOS kernel...
+kernel ${kernel-url} || goto boot_failure
+
+echo Fetching NixOS initrd...
+initrd ${initrd-url} || goto boot_failure
+
+# --- KERNEL BOOT ARGUMENTS ---
+#
+# CRITICAL: The 'init=' argument below is a PLACEHOLDER.
+# After your GitHub workflow runs, you MUST open the 'boot-params.txt'
+# file from the release and paste its contents here.
+#
+# For example, if boot-params.txt contains:
+#   init=/nix/store/a1b2c3d4-nixos-system-nixos-24.05/init
+# ...then you would change the line below to match.
+#
+echo "Setting NixOS boot arguments (check 'init=' parameter!)..."
+chain ${kernel-url} init=PLACEHOLDER_PASTE_INIT_FROM_BOOT_PARAMS_TXT_HERE iso_url=${iso-url} boot.shell_on_fail || goto boot_failure
+
+# --- BOOT COMMAND ---
+echo "Attempting to boot..."
+boot
+
+:boot_failure
+echo
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "!!!    KERNEL OR INITRD FAILED TO LOAD     !!!"
+echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
+echo "Check the following:"
+echo "1. The github_user and github_repo variables are set correctly."
+echo "2. A release tagged '${release_tag}' exists and contains all required assets."
+echo "3. The 'init=' parameter has been updated from boot-params.txt."
+echo
+echo "Pausing for 2 minutes before exiting..."
+sleep 120
+exit
+
