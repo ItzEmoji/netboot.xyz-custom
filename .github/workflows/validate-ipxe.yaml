@@ -1,0 +1,77 @@
+# This workflow validates iPXE scripts in the repository.
+# It runs on every push and pull request to the main branch.
+#
+# It performs two checks:
+# 1. Linting: Checks all *.ipxe files for syntax errors.
+# 2. Smoke Test: Attempts to boot the main entrypoint script in a QEMU VM
+#    to catch runtime errors like missing files or invalid commands.
+name: Validate iPXE Scripts
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-ipxe:
+    runs-on: alpine-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install iPXE Utilities
+        run: sudo apk update && sudo apk ipxe qemu-system-x86_64
+
+      - name: Lint iPXE Scripts
+        run: |
+          echo "Scanning for iPXE scripts and checking syntax..."
+          has_errors=false
+          for script in $(find . -type f -name "*.ipxe"); do
+            echo "--> Checking ${script}"
+            if ! ipxe-script --check "${script}"; then
+              echo "Syntax error found in ${script}"
+              has_errors=true
+            fi
+          done
+          if [ "$has_errors" = true ]; then
+            exit 1
+          fi
+          echo "All scripts passed syntax check."
+
+      - name: Set up QEMU for Functional Test
+        run: sudo apt-get install -y qemu-system-x86
+
+      - name: Run iPXE Smoke Test in QEMU
+        run: |
+          # --- CONFIGURATION ---
+          # Set this to the main entrypoint script for your netboot environment.
+          ENTRYPOINT_SCRIPT="boot.ipxe"
+
+          if [ ! -f "$ENTRYPOINT_SCRIPT" ]; then
+            echo "Skipping QEMU test: Entrypoint script '$ENTRYPOINT_SCRIPT' not found."
+            # If the entrypoint doesn't exist, we don't fail the build,
+            # as some repos might not have a single entrypoint.
+            exit 0
+          fi
+
+          echo "Starting QEMU smoke test with entrypoint: ${ENTRYPOINT_SCRIPT}"
+
+          # QEMU's -netdev user,tftp=. exposes the current directory as a TFTP server.
+          # The bootfile=${ENTRYPOINT_SCRIPT} tells iPXE to load that file on start.
+          # We use a timeout to prevent the job from running forever if it hangs.
+          timeout 60 qemu-system-x86_64 \
+            -nographic \
+            -netdev user,id=n1,tftp=./,bootfile=${ENTRYPOINT_SCRIPT} \
+            -device virtio-net-pci,netdev=n1 \
+            -serial mon:stdio | tee qemu.log
+
+          # The test fails if iPXE reports a critical, common error.
+          # This helps catch issues like 'chain'ing to a file that doesn't exist.
+          if grep -i -q "Nothing to boot" qemu.log || grep -i -q "Could not boot" qemu.log || grep -i -q "No such file or directory" qemu.log; then
+            echo "!!! iPXE runtime error detected in QEMU !!!"
+            cat qemu.log
+            exit 1
+          else
+            echo "QEMU smoke test completed without critical errors."
+          fi
