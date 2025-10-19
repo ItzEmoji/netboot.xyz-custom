@@ -28,7 +28,7 @@ jobs:
         run: |
           # --- CONFIGURATION ---
           # Set this to the main entrypoint script for your netboot environment.
-          ENTRYPOINT_SCRIPT="boot.ipxe"
+          ENTRYPOINT_SCRIPT="custom.ipxe"
 
           if [ ! -f "$ENTRYPOINT_SCRIPT" ]; then
             echo "Skipping QEMU test: Entrypoint script '$ENTRYPOINT_SCRIPT' not found."
