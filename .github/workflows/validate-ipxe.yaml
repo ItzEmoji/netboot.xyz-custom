@@ -1,4 +1,4 @@
-# This workflow validates iPXE scripts in the repository.
+# This workflow validates iPXE scripts in the repository using a lightweight Alpine Linux container.
 # It runs on every push and pull request to the main branch.
 #
 # It performs two checks:
@@ -15,13 +15,18 @@ on:
 
 jobs:
   validate-ipxe:
-    runs-on: alpine-latest
+    # The job runs on a standard Ubuntu host, but all steps execute inside an Alpine container.
+    runs-on: ubuntu-latest
+    container: alpine:latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install iPXE Utilities
-        run: sudo apk update && sudo apk ipxe qemu-system-x86_64
+      - name: Install Dependencies
+        run: |
+          apk update
+          apk add ipxe qemu-system-x86_64
 
       - name: Lint iPXE Scripts
         run: |
@@ -29,6 +34,7 @@ jobs:
           has_errors=false
           for script in $(find . -type f -name "*.ipxe"); do
             echo "--> Checking ${script}"
+            # The 'ipxe-script' command comes from the ipxe package on Alpine
             if ! ipxe-script --check "${script}"; then
               echo "Syntax error found in ${script}"
               has_errors=true
@@ -39,9 +45,6 @@ jobs:
           fi
           echo "All scripts passed syntax check."
 
-      - name: Set up QEMU for Functional Test
-        run: sudo apt-get install -y qemu-system-x86
-
       - name: Run iPXE Smoke Test in QEMU
         run: |
           # --- CONFIGURATION ---
@@ -50,8 +53,6 @@ jobs:
 
           if [ ! -f "$ENTRYPOINT_SCRIPT" ]; then
             echo "Skipping QEMU test: Entrypoint script '$ENTRYPOINT_SCRIPT' not found."
-            # If the entrypoint doesn't exist, we don't fail the build,
-            # as some repos might not have a single entrypoint.
             exit 0
           fi
 
@@ -75,3 +76,4 @@ jobs:
           else
             echo "QEMU smoke test completed without critical errors."
           fi
+
