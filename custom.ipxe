@@ -2,8 +2,4 @@
 
 dhcp
 
-set base https://github.com/ItzEmoji/nixos-images/releases/latest/download
-
-chain https://github.com/ItzEmoji/nixos-images/releases/download/latest/netboot.ipxe
-
-boot
+chain https://github.com/nix-community/nixos-images/releases/download/nixos-unstable/netboot-x86_64-linux.ipxe
