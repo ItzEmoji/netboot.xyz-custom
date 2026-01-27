@@ -4,13 +4,6 @@ dhcp
 
 set base https://github.com/ItzEmoji/nixos-images/releases/latest/download
 
-echo Lade Kernel...
-kernel ${base}/bzImage \
-  init=/nix/store/*-init/init \
-  console=tty0 console=ttyS0 \
-  ip=dhcp
-
-echo Lade initrd...
-initrd ${base}/initrd
+chain https://github.com/ItzEmoji/nixos-images/releases/download/latest/netboot.ipxe
 
 boot
