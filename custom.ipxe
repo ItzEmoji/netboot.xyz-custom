@@ -1,4 +1,4 @@
 #!ipxe
 # Use the cmdline variable to allow the user to specify custom kernel params
 # when chainloading this script from other iPXE scripts like netboot.xyz
-chain https://raw.githubusercontent.com/ItzEmoji/ipxetest/refs/heads/main/ipxetest.ipxe
+chain https://github.com/ItzEmoji/nixos-images/releases/latest/download/netboot.ipxe
