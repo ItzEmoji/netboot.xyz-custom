@@ -1,6 +1,6 @@
 #!ipxe
 
 set arch x86_64
-kernel https://github.com/nix-community/nixos-images/releases/latest/download/netboot-${arch}-linux initrd=initrd
-initrd https://github.com/nix-community/nixos-images/releases/latest/download/netboot-${arch}-initrd
+kernel https://github.com/nix-community/nixos-images/releases/latest/download/bzImage-${arch}-linux initrd=initrd
+initrd https://github.com/nix-community/nixos-images/releases/latest/download/initrd-${arch}-linux
 boot
