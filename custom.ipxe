@@ -2,6 +2,6 @@
 # Use the cmdline variable to allow the user to specify custom kernel params
 # when chainloading this script from other iPXE scripts like netboot.xyz
 imgfree
-kernel https://github.com/nix-community/nixos-images/releases/download/nixos-25.11/bzImage-x86_64-linux init=/nix/store/lillmv6sbjxgyyyn1ilkica21q3hmpya-nixos-system-nixos-kexec-25.11beta-193477.gfedcba/init initrd=initrd-x86_64-linux nohibernate loglevel=4 lsm=landlock,yama,bpf ${cmdline}
-initrd https://github.com/nix-community/nixos-images/releases/download/nixos-25.11/initrd-x86_64-linux
+kernel https://github.com/ItzEmoji/nixos-images/releases/download/v1.0.12/bzImage init=/nix/store/7ngqiy242hkc3jlia5v58msxi071gyph-nixos-system-nixos-installer-kexec-26.05.20260217.0182a36/init initrd=initrd-x86_64-linux nohibernate loglevel=4 lsm=landlock,yama,bpf ${cmdline}
+initrd https://github.com/ItzEmoji/nixos-images/releases/download/v1.0.12/initrd
 boot
